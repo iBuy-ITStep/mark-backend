@@ -202,6 +202,27 @@ namespace MarkBackend.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Sets the available stock quantity for a product.
+        /// Users only see "In Stock / Out of Stock". Admins see the exact number via GET /api/products/{id}.
+        /// </summary>
+        [HttpPut("{id:int}/stock")]
+        [Authorize(Roles = "Admin,Seller")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> SetStock(int id, [FromBody] SetStockDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var product = await _products.GetProductByIdAsync(id);
+            if (product == null) return NotFound();
+
+            product.StockQuantity = dto.Quantity;
+            await _products.UpdateProductAsync(product);
+            return NoContent();
+        }
+
         // ── Helpers ───────────────────────────────────────────────────────────
 
         private static ProductDto MapToDto(Product p) => new()

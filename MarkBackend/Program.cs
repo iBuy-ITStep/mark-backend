@@ -142,6 +142,8 @@ namespace MarkBackend
             app.UseAuthentication();
             app.UseAuthorization();
 
+            app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+
             // Maps to all [ApiController] classes
             app.MapControllers();
 

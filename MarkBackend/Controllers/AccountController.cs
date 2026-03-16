@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using MarkBackend.Models;
+using MarkBackend.DTOs;
 using MarkBackend.ViewModels;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -213,6 +214,53 @@ namespace MarkBackend.Controllers
 
             if (result.Succeeded)
                 return Ok(new { message = "Email confirmed successfully." });
+
+            return BadRequest(result.Errors);
+        }
+
+        /// <summary>
+        /// Sends a password reset link to the provided email address.
+        /// Always returns 200 even if the email does not exist — prevents user enumeration.
+        /// </summary>
+        [HttpPost("forgot-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto model)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            // Always return 200 — never confirm whether an email exists in the system
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+                return Ok(new { message = "If that email exists, a reset link has been sent." });
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var encodedToken = Base64UrlEncoder.Encode(token);
+            var resetLink = $"{model.ClientUri}?encodedToken={encodedToken}&email={Uri.EscapeDataString(user.Email!)}";
+
+            await _emailHelper.SendEmailPasswordReset(user.Email!, resetLink);
+
+            return Ok(new { message = "If that email exists, a reset link has been sent." });
+        }
+
+        /// <summary>
+        /// Resets a user's password using the token received via email.
+        /// </summary>
+        [HttpPost("reset-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto model)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+                return BadRequest(new { message = "Invalid request." });
+
+            var decodedToken = Base64UrlEncoder.Decode(model.EncodedToken);
+            var result = await _userManager.ResetPasswordAsync(user, decodedToken, model.NewPassword);
+
+            if (result.Succeeded)
+                return Ok(new { message = "Password reset successfully." });
 
             return BadRequest(result.Errors);
         }

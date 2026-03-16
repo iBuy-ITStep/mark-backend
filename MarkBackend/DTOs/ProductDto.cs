@@ -1,4 +1,6 @@
-﻿namespace MarkBackend.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace MarkBackend.DTOs
 {
     public class ProductDto
     {
@@ -31,5 +33,11 @@
         public int Rating3Count { get; set; }
         public int Rating4Count { get; set; }
         public int Rating5Count { get; set; }
+    }
+
+    public class SetStockDto
+    {
+        [Range(0, int.MaxValue)]
+        public int Quantity { get; set; }
     }
 }

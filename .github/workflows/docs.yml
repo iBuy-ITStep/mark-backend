@@ -1,0 +1,36 @@
+name: Docs — Publish OpenAPI spec
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install swagger CLI
+        run: dotnet tool install -g Swashbuckle.AspNetCore.Cli
+
+      - name: Restore and build
+        run: |
+          dotnet restore
+          dotnet build -c Release
+
+      - name: Export swagger.json
+        run: |
+          swagger tofile \
+            --output swagger.json \
+            ./MarkBackend/bin/Release/net10.0/MarkBackend.dll v1
+
+      - name: Upload spec as release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: swagger.json
