@@ -7,7 +7,9 @@ namespace MarkBackend.Data
     public class ApplicationContext : IdentityDbContext<User>
     {
         public ApplicationContext(DbContextOptions<ApplicationContext> options)
-            : base(options) { }
+            : base(options) {
+            Database.EnsureCreated();
+        }
 
         public DbSet<Product> Products { get; set; }
         public DbSet<Category> Categories { get; set; }

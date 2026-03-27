@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
+﻿using MarkBackend.Data;
 using MarkBackend.DTOs;
 using MarkBackend.Models;
 using MarkBackend.Models.Pages;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MarkBackend.Controllers
 {
@@ -18,11 +20,13 @@ namespace MarkBackend.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly ApplicationContext _context;
 
-        public AdminController(UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
+        public AdminController(UserManager<User> userManager, RoleManager<IdentityRole> roleManager, ApplicationContext context)
         {
             _userManager = userManager;
             _roleManager = roleManager;
+            _context = context;
         }
 
         /// <summary>
@@ -32,21 +36,34 @@ namespace MarkBackend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUsers([FromQuery] QueryOptions options)
         {
-            // PagedList works on IQueryable, so we pass the EF-backed Users queryable
             var paged = await PagedList<User>.CreateAsync(_userManager.Users, options);
 
-            // Map to DTO and resolve roles per user
-            var userDtos = new List<UserDto>();
-            foreach (var user in paged.Items)
+            var userIds = paged.Items.Select(u => u.Id).ToList();
+            
+            // 1. Fetch the flat data from the database into memory first
+            var flatUserRoles = await _context.UserRoles
+                .Where(ur => userIds.Contains(ur.UserId))
+                .Join(_context.Roles,
+                    ur => ur.RoleId,
+                    r => r.Id,
+                    (ur, r) => new { ur.UserId, RoleName = r.Name! })
+                .ToListAsync();
+
+            // 2. Perform the GroupBy and ToDictionary in memory using standard LINQ
+            var rolesByUser = flatUserRoles
+                .GroupBy(x => x.UserId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => (IList<string>)g.Select(x => x.RoleName).ToList()
+                );
+            
+            var userDtos = paged.Items.Select(u => new UserDto
             {
-                userDtos.Add(new UserDto
-                {
-                    Id = user.Id,
-                    Email = user.Email!,
-                    EmailConfirmed = user.EmailConfirmed,
-                    Roles = await _userManager.GetRolesAsync(user)
-                });
-            }
+                Id = u.Id,
+                Email = u.Email!,
+                EmailConfirmed = u.EmailConfirmed,
+                Roles = rolesByUser.TryGetValue(u.Id, out var roles) ? roles : new List<string>()
+            }).ToList();
 
             return Ok(new
             {
@@ -80,7 +97,7 @@ namespace MarkBackend.Controllers
         }
 
         /// <summary>
-        /// Creates a new user and assigns the default "User" role.
+        /// Creates a new verified user and assigns the default "User" role.
         /// </summary>
         [HttpPost("users")]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
@@ -158,17 +175,26 @@ namespace MarkBackend.Controllers
 
         /// <summary>
         /// Sets a user's roles. The provided list is treated as the complete desired state —
-        /// roles absent from the list are removed, roles present are added if missing.
+        /// roles absent from the list are removed, roles present are added if missing. Assignment of the "SuperAdmin" role is prohibited via this endpoint for security reasons.
         /// </summary>
+        /// <param name="userId">The ID of the user whose roles are being updated.</param>
+        /// <param name="dto">A DTO containing the list of roles to assign to the user.</param>
+        /// <returns>
+        /// No content on success, 404 if the user does not exist, or 400 if the request is invalid.
+        /// </returns>
         [HttpPut("users/{userId}/roles")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> SetUserRoles(string userId, [FromBody] ChangeRolesDto dto)
         {
+            if (dto.Roles.Contains("SuperAdmin", StringComparer.OrdinalIgnoreCase))
+                return BadRequest(new { message = "SuperAdmin role cannot be assigned via this endpoint." });
+
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null) return NotFound();
 
             var currentRoles = await _userManager.GetRolesAsync(user);
+
             var toAdd = dto.Roles.Except(currentRoles);
             var toRemove = currentRoles.Except(dto.Roles);
 

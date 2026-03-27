@@ -71,6 +71,8 @@ namespace MarkBackend
                 options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
             });
 
+            
+
             // 4. Database Context setup
             builder.Services.AddDbContext<ApplicationContext>(options =>
                 options.UseSqlServer(_confString.GetConnectionString("DefaultConnection")));
@@ -133,7 +135,7 @@ namespace MarkBackend
 
             app.UseHttpsRedirection();
 
-            // Allows the API to serve files directly from /wwwroot/ (e.g. your product images)
+            // Allows the API to serve files directly from /wwwroot/ (e.g. product images)
             app.UseStaticFiles();
 
             app.UseRouting();
@@ -147,7 +149,58 @@ namespace MarkBackend
             // Maps to all [ApiController] classes
             app.MapControllers();
 
+            await SeedAsync(app);
             await app.RunAsync();
         }
+
+        /// <summary>
+        /// Seeds initial roles and a SUPERADMIN account into the application's identity store if they do not already exist.
+        /// </summary>
+        /// <param name="app">The web application instance whose service provider is used to access identity management services.</param>
+        /// <returns>A task that represents the asynchronous seeding operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the super administrator account cannot be created due to identity errors.</exception>
+        private static async Task SeedAsync(WebApplication app)
+        {
+            using var scope = app.Services.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+            // === Seed roles ===
+            string[] roles = ["SuperAdmin", "Admin", "Seller", "User"];
+            foreach (var role in roles)
+            {
+                if (!await roleManager.RoleExistsAsync(role))
+                    await roleManager.CreateAsync(new IdentityRole(role));
+            }
+
+            // === Seed superadmin ===
+            const string superAdminEmail = "msadm@markbackend.internal";
+            const string superAdminPassword = "bv10cBvUp9QYa9l_V8";
+
+            var existing = await userManager.FindByEmailAsync(superAdminEmail);
+            if (existing == null)
+            {
+                var superAdmin = new User
+                {
+                    UserName = superAdminEmail,
+                    Email = superAdminEmail,
+                    // Skip email confirmation — this is infrastructure
+                    EmailConfirmed = true
+                };
+
+                var result = await userManager.CreateAsync(superAdmin, superAdminPassword);
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(superAdmin, "SuperAdmin");
+                }
+                else
+                {
+                    // Surface seeding errors clearly at startup
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    throw new InvalidOperationException($"SuperAdmin seeding failed: {errors}");
+                }
+            }
+        }
     }
+
 }
