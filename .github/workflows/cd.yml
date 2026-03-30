@@ -42,7 +42,7 @@ jobs:
       - name: Download current ECS task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition mark-backend-fargate-family \
+            --task-definition mark-backend \
             --query taskDefinition > task-def-raw.json
 
           # Strip fields added by AWS that the deploy action cannot re-register
