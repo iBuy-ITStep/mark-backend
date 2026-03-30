@@ -42,8 +42,20 @@ jobs:
       - name: Download current ECS task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition mark-backend \
-            --query taskDefinition > task-def.json
+            --task-definition mark-backend-fargate-family \
+            --query taskDefinition > task-def-raw.json
+
+          # Strip fields added by AWS that the deploy action cannot re-register
+          jq 'del(
+            .taskDefinitionArn,
+            .revision,
+            .status,
+            .requiresAttributes,
+            .compatibilities,
+            .registeredAt,
+            .registeredBy,
+            .enableFaultInjection
+          )' task-def-raw.json > task-def.json
 
       - name: Update image in task definition
         id: task-def
