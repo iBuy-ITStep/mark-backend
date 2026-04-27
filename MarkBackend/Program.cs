@@ -147,6 +147,14 @@ namespace MarkBackend
 
             var app = builder.Build();
 
+            // Ensure database is created (only for non-test environments)
+            if (!app.Environment.IsEnvironment("Testing"))
+            {
+                using var scope = app.Services.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+                context.Database.EnsureCreated();
+            }
+
             // 8. Middleware Pipeline Setup
             if (app.Environment.IsDevelopment())
             {
@@ -173,7 +181,12 @@ namespace MarkBackend
             // Maps to all [ApiController] classes
             app.MapControllers();
 
-            await SeedAsync(app);
+            // Seed roles and superadmin (only for non-test environments)
+            if (!app.Environment.IsEnvironment("Testing"))
+            {
+                await SeedAsync(app);
+            }
+
             await app.RunAsync();
         }
 
@@ -226,5 +239,7 @@ namespace MarkBackend
             }
         }
     }
-
 }
+
+// Make Program class accessible to test project
+public partial class Program { }

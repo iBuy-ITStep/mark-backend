@@ -8,7 +8,7 @@ namespace MarkBackend.Data
     {
         public ApplicationContext(DbContextOptions<ApplicationContext> options)
             : base(options) {
-            Database.EnsureCreated();
+            // Database.EnsureCreated() moved to Program.cs to avoid conflicts with test InMemory provider
         }
 
         public DbSet<Product> Products { get; set; }

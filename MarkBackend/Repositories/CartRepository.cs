@@ -264,6 +264,7 @@ namespace MarkBackend.Repositories
         public async Task<bool> ConvertToOrderAsync(string userId)
         {
             var cart = await _context.Carts
+                .Include(c => c.CartEntries)
                 .Where(c => c.OwnerId == userId && !c.IsOrder)
                 .FirstOrDefaultAsync();
 

@@ -59,13 +59,12 @@ namespace MarkBackend.Controllers
 
         /// <summary>
         /// Returns metadata for all description images linked to a product.
-        /// The rich-text editor calls this on load so it knows which images already exist.
+        /// Public endpoint - product details are public, so images should be too.
         /// Does not return the binary data — fetch individual images via GET /api/images/{id}.
         /// </summary>
         /// <param name="productId">The product ID to fetch images for.</param>
         /// <returns>A list of image metadata objects (<see cref="ImageUploadResultDto"/>) for the specified product.</returns>
         [HttpGet("product/{productId:int}")]
-        [Authorize(Roles = "Admin,Seller")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetByProduct(int productId)
         {
