@@ -9,10 +9,12 @@ namespace MarkBackend.Repositories
     public class ProductRepository : IProductRepository
     {
         private readonly ApplicationContext _context;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public ProductRepository(ApplicationContext context)
+        public ProductRepository(ApplicationContext context, ICategoryRepository categoryRepository)
         {
             _context = context;
+            _categoryRepository = categoryRepository;
         }
 
         public async Task<PagedList<Product>> GetAllProductsAsync(QueryOptions options)
@@ -27,8 +29,10 @@ namespace MarkBackend.Repositories
 
         public async Task<PagedList<Product>> GetProductsByCategoryAsync(int categoryId, QueryOptions options)
         {
+            var categoryIds = await _categoryRepository.GetCategoryAndDescendantsAsync(categoryId);
+
             IQueryable<Product> query = _context.Products
-                .Where(p => p.CategoryId == categoryId)
+                .Where(p => categoryIds.Contains(p.CategoryId))
                 .Include(p => p.Category)
                 .Include(p => p.Brand)
                 .AsNoTracking();

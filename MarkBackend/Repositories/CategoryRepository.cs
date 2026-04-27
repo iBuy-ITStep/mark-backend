@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 using MarkBackend.Data;
 using MarkBackend.Interfaces;
 using MarkBackend.Models;
@@ -50,6 +51,32 @@ namespace MarkBackend.Repositories
                 _context.Categories.Remove(category);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        /// <summary>
+        /// Gets all descendant category IDs for a given parent category (including the parent itself).
+        /// Recursively finds all children to support hierarchical filtering.
+        /// </summary>
+        public async Task<List<int>> GetCategoryAndDescendantsAsync(int categoryId)
+        {
+            var allCategories = await _context.Categories.AsNoTracking().ToListAsync();
+            var result = new List<int> { categoryId };
+            var queue = new Queue<int>();
+            queue.Enqueue(categoryId);
+
+            while (queue.Count > 0)
+            {
+                var currentId = queue.Dequeue();
+                var children = allCategories.Where(c => c.ParentId == currentId).Select(c => c.Id).ToList();
+
+                foreach (var childId in children)
+                {
+                    result.Add(childId);
+                    queue.Enqueue(childId);
+                }
+            }
+
+            return result;
         }
     }
 }

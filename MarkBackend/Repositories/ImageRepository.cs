@@ -48,5 +48,17 @@ namespace MarkBackend.Repositories
                 .Where(i => i.ProductId == productId && !i.IsPreview)
                 .OrderBy(i => i.UploadedAt)
                 .ToListAsync();
+
+        public async Task<List<ProductImage>> GetAllImagesByProductAsync(int productId) =>
+            await _context.ProductImages
+                .Where(i => i.ProductId == productId)
+                .OrderBy(i => i.UploadedAt)
+                .ToListAsync();
+
+        public async Task<List<ProductImage>> GetImagesByUserAsync(string userId) =>
+            await _context.ProductImages
+                .Where(i => i.UploadedById == userId)
+                .OrderByDescending(i => i.UploadedAt)
+                .ToListAsync();
     }
 }

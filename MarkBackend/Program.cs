@@ -26,6 +26,28 @@ namespace MarkBackend
             // 2. Load Configuration securely
             var _confString = builder.Configuration;
 
+            // 1.5. CORS Configuration
+            var corsOrigins = _confString.GetValue<string>("CorsOrigins") ?? "*";
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowSpecified", policy =>
+                {
+                    if (corsOrigins == "*")
+                    {
+                        policy.AllowAnyOrigin()
+                              .AllowAnyHeader()
+                              .AllowAnyMethod();
+                    }
+                    else
+                    {
+                        policy.WithOrigins(corsOrigins.Split(";"))
+                              .AllowAnyHeader()
+                              .AllowAnyMethod()
+                              .AllowCredentials();
+                    }
+                });
+            });
+
             // 3. Swagger / OpenAPI Setup with JWT Authorization Support
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
@@ -139,6 +161,8 @@ namespace MarkBackend
             app.UseStaticFiles();
 
             app.UseRouting();
+
+            app.UseCors("AllowSpecified");
 
             // MUST be in this order
             app.UseAuthentication();

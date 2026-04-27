@@ -79,6 +79,27 @@ namespace MarkBackend.Controllers
             }));
         }
 
+        /// <summary>
+        /// Returns all your uploaded images (both preview and description).
+        /// Use this to browse images you've uploaded without linking them to products.
+        /// </summary>
+        /// <returns>A list of all images uploaded by the authenticated user.</returns>
+        [HttpGet("my-images")]
+        [Authorize(Roles = "Admin,Seller")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMyImages()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var images = await _images.GetImagesByUserAsync(userId);
+            return Ok(images.Select(i => new ImageUploadResultDto
+            {
+                Id = i.Id,
+                IsPreview = i.IsPreview,
+                OriginalFileName = i.OriginalFileName,
+                UploadedAt = i.UploadedAt
+            }));
+        }
+
         // ── Upload: description image ─────────────────────────────────────────
 
         /// <summary>

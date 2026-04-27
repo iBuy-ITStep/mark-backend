@@ -26,7 +26,8 @@ namespace MarkBackend.DTOs
 
         /// <summary>
         /// ID returned by POST /api/images/upload/preview.
-        /// Upload the preview first, then pass its ID here.
+        /// Optional: you can upload the preview later via PUT /api/products/{id}.
+        /// You can also use GET /api/images/my-images to see your uploaded images and reuse them.
         /// </summary>
         public Guid? PreviewImageId { get; set; }
     }

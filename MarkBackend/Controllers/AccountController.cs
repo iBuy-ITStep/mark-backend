@@ -9,6 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.ComponentModel.DataAnnotations;
 using MarkBackend.Helpers;
 
 namespace MarkBackend.Controllers
@@ -93,7 +94,8 @@ namespace MarkBackend.Controllers
         /// <param name="model">The user login credentials.</param>
         /// <returns>An object containing the JWT, refresh token, and expiry details.</returns>
         /// <response code="200">Authentication successful. Tokens returned.</response>
-        /// <response code="401">Invalid credentials provided.</response>[HttpPost("login")]
+        /// <response code="401">Invalid credentials provided.</response>
+        [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Login([FromBody] LoginViewModel model)
@@ -170,7 +172,8 @@ namespace MarkBackend.Controllers
         /// </summary>
         /// <returns>A success status message.</returns>
         /// <response code="200">Logout successful and token revoked.</response>
-        /// <response code="401">The request lacks valid authentication credentials.</response>[HttpPost("logout")]
+        /// <response code="401">The request lacks valid authentication credentials.</response>
+        [HttpPost("logout")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -197,7 +200,8 @@ namespace MarkBackend.Controllers
         /// <param name="email">The email address of the user.</param>
         /// <returns>A status indicating whether the email was confirmed successfully.</returns>
         /// <response code="200">Email confirmed successfully.</response>
-        /// <response code="400">Invalid token or email provided.</response>[HttpPost("confirm-email")]
+        /// <response code="400">Invalid token or email provided.</response>
+        [HttpPost("confirm-email")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ConfirmEmail([FromQuery] string encodedToken, [FromQuery] string email)
@@ -335,11 +339,13 @@ namespace MarkBackend.Controllers
         /// <summary>
         /// The expired JSON Web Token.
         /// </summary>
+        [Required]
         public string AccessToken { get; set; } = null!;
 
         /// <summary>
         /// The active refresh token associated with the user session.
         /// </summary>
+        [Required]
         public string RefreshToken { get; set; } = null!;
     }
 }
