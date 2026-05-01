@@ -16,9 +16,9 @@ namespace MarkBackend.Helpers
         {
             var message = new MimeMessage();
 
-            message.From.Add(new MailboxAddress("IBuy Mart", "ibuy.support.mail@gmail.com"));
+            message.From.Add(new MailboxAddress("IBuy Marketplace", "ibuy.support.mail@gmail.com"));
             message.To.Add(new MailboxAddress(name: userEmail, address: userEmail));
-            message.Subject = "Confirmation of registration on the IBuy Mart website";
+            message.Subject = "Confirmation of registration on the IBuy website";
             message.Body = new TextPart("html")
             {
                 Text = link,
@@ -52,12 +52,12 @@ namespace MarkBackend.Helpers
             var message = new MimeMessage();
 
             //от кого отправляем и заголовок
-            message.From.Add(new MailboxAddress("IBuy Mart", "ibuy.support.mail@gmail.com"));
+            message.From.Add(new MailboxAddress("IBuy Marketplace", "ibuy.support.mail@gmail.com"));
             //кому отправляем
             message.To.Add(new MailboxAddress($"{userEmail}", userEmail));
 
             //тема письма
-            message.Subject = "Сброс пароля на маркетплейсе IBuy Mart";
+            message.Subject = "Сброс пароля на маркетплейсе IBuy";
             //тело письма
             message.Body = new TextPart("html")
             {
