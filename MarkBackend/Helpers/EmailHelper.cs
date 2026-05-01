@@ -16,9 +16,9 @@ namespace MarkBackend.Helpers
         {
             var message = new MimeMessage();
 
-            message.From.Add(new MailboxAddress("MiniMart marketplace", "hmelforitstep@gmail.com"));
+            message.From.Add(new MailboxAddress("IBuy Mart", "ibuy.support.mail@gmail.com"));
             message.To.Add(new MailboxAddress(name: userEmail, address: userEmail));
-            message.Subject = "Confirmation of registration on the MiniMart website";
+            message.Subject = "Confirmation of registration on the IBuy Mart website";
             message.Body = new TextPart("html")
             {
                 Text = link,
@@ -27,7 +27,7 @@ namespace MarkBackend.Helpers
             using (var client = new SmtpClient())
             {
                 await client.ConnectAsync("smtp.gmail.com", 587, false);
-                await client.AuthenticateAsync("hmelforitstep@gmail.com", _config.GetValue<string>("GoogleApplicationPassword"));
+                await client.AuthenticateAsync("ibuy.support.mail@gmail.com", _config.GetValue<string>("GoogleApplicationPassword"));
 
                 try
                 {
@@ -52,12 +52,12 @@ namespace MarkBackend.Helpers
             var message = new MimeMessage();
 
             //от кого отправляем и заголовок
-            message.From.Add(new MailboxAddress("MiniMart", "hmelforitstep@gmail.com"));
+            message.From.Add(new MailboxAddress("IBuy Mart", "ibuy.support.mail@gmail.com"));
             //кому отправляем
             message.To.Add(new MailboxAddress($"{userEmail}", userEmail));
 
             //тема письма
-            message.Subject = "Сброс пароля на маркетплейсе MiniMart";
+            message.Subject = "Сброс пароля на маркетплейсе IBuy Mart";
             //тело письма
             message.Body = new TextPart("html")
             {
@@ -69,7 +69,7 @@ namespace MarkBackend.Helpers
                 //Указываем smtp сервер почты и порт
                 await client.ConnectAsync("smtp.gmail.com", 587, false);
                 //Указываем свой Email адрес и пароль приложения
-                await client.AuthenticateAsync("hmelforitstep@gmail.com", _config.GetValue<string>("GoogleApplicationPassword"));
+                await client.AuthenticateAsync("ibuy.support.mail@gmail.com", _config.GetValue<string>("GoogleApplicationPassword"));
 
                 try
                 {
